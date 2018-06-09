@@ -5,6 +5,12 @@ import android.graphics.Bitmap;
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 
+/**
+ * This class is responsible for converting images from Android Bitmap objects to
+ *  OpenCV Matrix (Mat) objects and vice versa
+ *
+ * @author ArmandoNCM
+ */
 public class ImageConversion {
 
     /**

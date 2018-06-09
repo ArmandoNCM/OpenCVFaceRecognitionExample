@@ -209,7 +209,7 @@ public class MainActivity extends Activity {
                 if (numberOfDetectedFaces > 0) {
 
                     matrix = faceDetection.cropFace(matrix, detectedFaceRectangles[0]);
-                    matrix = ImagePostProcessing.upscaleImage(matrix);
+                    matrix = ImagePostProcessing.upscaleImage(matrix, 1000);
                 }
                 return ImageConversion.convertMatrixToBitmap(matrix);
             } catch (IOException e) {

@@ -17,6 +17,8 @@ import java.io.InputStream;
 
 /**
  * This class is responsible for pre-processing images in preparation for face recognition with OpenCV
+ *
+ * @author ArmandoNCM
  */
 public class ImagePreProcessing {
 

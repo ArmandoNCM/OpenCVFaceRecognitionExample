@@ -22,6 +22,8 @@ import java.io.InputStream;
  * This class is responsible solely for the face detection in images with OpenCV
  * Keep in mind the difference between detection and recognition formal definitions when
  * using this class
+ *
+ * @author ArmandoNCM
  */
 public class FaceDetection {
 
