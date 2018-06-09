@@ -1,25 +1,33 @@
 package com.armandoncm.opencvfacerecognitionexample;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.armandoncm.opencvfacerecognitionexample.faceRecognition.FaceDetection;
+import com.armandoncm.opencvfacerecognitionexample.faceRecognition.ImageConversion;
 import com.armandoncm.opencvfacerecognitionexample.faceRecognition.ImagePreProcessing;
 
 import org.opencv.core.Mat;
+import org.opencv.core.Rect;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,10 +39,13 @@ public class MainActivity extends Activity {
 
     private static final int REQUEST_TAKE_PHOTO = 1;
     private static final int REQUEST_SELECT_PHOTO = 2;
+    private static final int PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 100;
 
     private ImageView imageView;
 
     private Uri photoURI;
+
+    boolean permissionGranted;
 
 
     @Override
@@ -46,11 +57,17 @@ public class MainActivity extends Activity {
         buttonSelectImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showSourceSelectionDialog();
+                if (permissionGranted) {
+
+                    showSourceSelectionDialog();
+                }
             }
         });
 
         imageView = findViewById(R.id.imageView);
+
+        checkPermissions();
+
     }
 
     private File createImageFile() throws IOException {
@@ -90,14 +107,14 @@ public class MainActivity extends Activity {
     }
 
     private void dispatchSelectPictureIntent() {
-        
+
         Intent intent = new Intent();
         intent.setType("image/*");
         intent.setAction(Intent.ACTION_GET_CONTENT);
         startActivityForResult(intent, REQUEST_SELECT_PHOTO);
     }
 
-    private void showSourceSelectionDialog(){
+    private void showSourceSelectionDialog() {
 
         String[] options = new String[2];
 
@@ -135,7 +152,7 @@ public class MainActivity extends Activity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         Uri uri;
-        switch (requestCode){
+        switch (requestCode) {
             case REQUEST_SELECT_PHOTO:
                 switch (resultCode) {
                     case RESULT_OK:
@@ -167,16 +184,32 @@ public class MainActivity extends Activity {
     }
 
     @SuppressLint("StaticFieldLeak")
-    private class ProcessImageTask extends AsyncTask<Uri, Void, Bitmap>{
+    private class ProcessImageTask extends AsyncTask<Uri, Void, Bitmap> {
 
         @Override
         protected Bitmap doInBackground(Uri... uris) {
 
             try {
                 Bitmap bitmap = ImagePreProcessing.loadBitmap(uris[0]);
-                Mat matrix = ImagePreProcessing.convertBitmapToMatrix(bitmap);
+                Mat matrix = ImageConversion.convertBitmapToMatrix(bitmap);
                 matrix = ImagePreProcessing.removeColorInformation(matrix);
-                return ImagePreProcessing.convertMatrixToBitmap(matrix);
+                FaceDetection faceDetection = FaceDetection.getInstance();
+                Rect[] detectedFaceRectangles = faceDetection.detectFaces(matrix);
+
+                final int numberOfDetectedFaces = detectedFaceRectangles.length;
+                MainActivity.this.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        String message = MainActivity.this.getResources().getString(R.string.msg_number_of_detected_faces);
+                        message = message.concat(": " + numberOfDetectedFaces);
+                        Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
+                    }
+                });
+                if (numberOfDetectedFaces > 0) {
+
+                    matrix = faceDetection.cropFace(matrix, detectedFaceRectangles[0]);
+                }
+                return ImageConversion.convertMatrixToBitmap(matrix);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -190,6 +223,51 @@ public class MainActivity extends Activity {
 
             imageView.setImageBitmap(bitmap);
 
+        }
+    }
+
+
+    public void checkPermissions() {
+        // Here, thisActivity is the current activity
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            // No explanation needed; request the permission
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE);
+
+            // PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE is an
+            // app-defined int constant. The callback method gets the
+            // result of the request.
+        } else {
+            // Permission has already been granted
+            ApplicationCore.loadOpenCV();
+            permissionGranted = true;
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String permissions[], @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // permission was granted, yay! Do the
+                    // contacts-related task you need to do.
+                    ApplicationCore.loadOpenCV();
+                    permissionGranted = true;
+                } else {
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+                    permissionGranted = false;
+                }
+            }
+            // other 'case' lines to check for other
+            // permissions this app might request.
         }
     }
 }

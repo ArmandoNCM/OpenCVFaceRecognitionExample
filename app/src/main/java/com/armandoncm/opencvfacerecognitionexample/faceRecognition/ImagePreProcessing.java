@@ -9,36 +9,16 @@ import android.support.media.ExifInterface;
 
 import com.armandoncm.opencvfacerecognitionexample.ApplicationCore;
 
-import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.IOException;
 import java.io.InputStream;
 
+/**
+ * This class is responsible for pre-processing images in preparation for face recognition with OpenCV
+ */
 public class ImagePreProcessing {
-
-    /**
-     * Converts an Android Bitmap to an OpenCV Matrix (Mat)
-     * @param bitmap Android Bitmap to be converted
-     * @return OpenCV Matrix (Mat)
-     */
-    public static Mat convertBitmapToMatrix(Bitmap bitmap){
-        Mat matrix = new Mat();
-        Utils.bitmapToMat(bitmap, matrix);
-        return matrix;
-    }
-
-    /**
-     * Converts an OpenCV Matrix to an Android Bitmap
-     * @param matrix OpenCV Matrix to be converted
-     * @return Android Bitmap
-     */
-    public static Bitmap convertMatrixToBitmap(Mat matrix){
-        Bitmap bitmap = Bitmap.createBitmap(matrix.cols(), matrix.rows(), Bitmap.Config.ARGB_8888);
-        Utils.matToBitmap(matrix, bitmap);
-        return bitmap;
-    }
 
     /**
      * Removes the Color information from an OpenCV Matrix
@@ -51,6 +31,12 @@ public class ImagePreProcessing {
         return grayScaleMatrix;
     }
 
+    /**
+     * Rotates the given Android Bitmap to the correct orientation to display on an ImageView
+     * @param bitmap Bitmap whose orientation is to be corrected
+     * @param orientation Orientation attribute obtained by the ExifInterface EXIF tag reading capabilities
+     * @return Correctly oriented Android Bitmap
+     */
     private static Bitmap rotateBitmap(Bitmap bitmap, int orientation) {
 
         Matrix matrix = new Matrix();
@@ -93,7 +79,12 @@ public class ImagePreProcessing {
         }
     }
 
-
+    /**
+     * Retrieves an Android Bitmap given its Uri
+     * @param uri Uri of the content to be fetched
+     * @return Android Bitmap
+     * @throws IOException If there was a problem retrieving the content
+     */
     public static Bitmap loadBitmap(Uri uri) throws IOException {
 
         Bitmap bitmap = MediaStore.Images.Media.getBitmap(ApplicationCore.getContext().getContentResolver(), uri);

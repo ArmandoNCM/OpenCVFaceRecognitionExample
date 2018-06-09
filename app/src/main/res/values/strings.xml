@@ -5,4 +5,5 @@
     <string name="title_select_image_source">Select Image Source</string>
     <string name="option_select_from_gallery">Select from Gallery</string>
     <string name="option_capture_from_camera">Capture from Camera</string>
+    <string name="msg_number_of_detected_faces">Number of Detected Faces</string>
 </resources>
