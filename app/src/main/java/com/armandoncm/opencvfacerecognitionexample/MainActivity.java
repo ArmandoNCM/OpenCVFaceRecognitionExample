@@ -24,6 +24,7 @@ import android.widget.Toast;
 
 import com.armandoncm.opencvfacerecognitionexample.faceRecognition.FaceDetection;
 import com.armandoncm.opencvfacerecognitionexample.faceRecognition.ImageConversion;
+import com.armandoncm.opencvfacerecognitionexample.faceRecognition.ImagePostProcessing;
 import com.armandoncm.opencvfacerecognitionexample.faceRecognition.ImagePreProcessing;
 
 import org.opencv.core.Mat;
@@ -208,6 +209,7 @@ public class MainActivity extends Activity {
                 if (numberOfDetectedFaces > 0) {
 
                     matrix = faceDetection.cropFace(matrix, detectedFaceRectangles[0]);
+                    matrix = ImagePostProcessing.upscaleImage(matrix);
                 }
                 return ImageConversion.convertMatrixToBitmap(matrix);
             } catch (IOException e) {
