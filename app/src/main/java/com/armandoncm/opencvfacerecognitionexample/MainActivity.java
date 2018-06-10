@@ -23,12 +23,13 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.armandoncm.opencvfacerecognitionexample.faceRecognition.FaceDetection;
-import com.armandoncm.opencvfacerecognitionexample.faceRecognition.ImageConversion;
-import com.armandoncm.opencvfacerecognitionexample.faceRecognition.ImagePostProcessing;
+import com.armandoncm.opencvfacerecognitionexample.faceRecognition.ImageProcessing;
 import com.armandoncm.opencvfacerecognitionexample.faceRecognition.ImagePreProcessing;
 
 import org.opencv.core.Mat;
+import org.opencv.core.Point;
 import org.opencv.core.Rect;
+import org.opencv.core.Size;
 
 import java.io.File;
 import java.io.IOException;
@@ -191,11 +192,22 @@ public class MainActivity extends Activity {
         protected Bitmap doInBackground(Uri... uris) {
 
             try {
+                // Image loading
                 Bitmap bitmap = ImagePreProcessing.loadBitmap(uris[0]);
-                Mat matrix = ImageConversion.convertBitmapToMatrix(bitmap);
-                matrix = ImagePreProcessing.removeColorInformation(matrix);
+
+                // Image conversion to OpenCV Matrix (Mat)
+                Mat image = ImageProcessing.convertBitmapToMatrix(bitmap);
+
+                // Image Pre-Processing
+                image = ImagePreProcessing.removeColorInformation(image);
+                image = ImagePreProcessing.equalizeHistogram(image);
+                Mat downscaledImage = ImagePreProcessing.downscaleImage(image);
+
+                double scale = image.size().width / downscaledImage.size().width;
+
+                // Face Detection
                 FaceDetection faceDetection = FaceDetection.getInstance();
-                Rect[] detectedFaceRectangles = faceDetection.detectFaces(matrix);
+                Rect[] detectedFaceRectangles = faceDetection.detectFaces(downscaledImage);
 
                 final int numberOfDetectedFaces = detectedFaceRectangles.length;
                 MainActivity.this.runOnUiThread(new Runnable() {
@@ -208,13 +220,17 @@ public class MainActivity extends Activity {
                 });
                 if (numberOfDetectedFaces > 0) {
 
-                    matrix = faceDetection.cropFace(matrix, detectedFaceRectangles[0]);
-                    matrix = ImagePostProcessing.upscaleImage(matrix, 1000);
+                    Rect faceROI = detectedFaceRectangles[0];
+                    Size currentROISize = faceROI.size();
+                    faceROI = new Rect(new Point(faceROI.x * scale, faceROI.y * scale), new Size(currentROISize.width * scale, currentROISize.height * scale));
+                    image = faceDetection.cropImage(image, faceROI);
+                    image = ImageProcessing.scaleImage(image, 1000);
                 }
-                return ImageConversion.convertMatrixToBitmap(matrix);
+                return ImageProcessing.convertMatrixToBitmap(image);
             } catch (IOException e) {
                 e.printStackTrace();
             }
+
 
             return null;
         }

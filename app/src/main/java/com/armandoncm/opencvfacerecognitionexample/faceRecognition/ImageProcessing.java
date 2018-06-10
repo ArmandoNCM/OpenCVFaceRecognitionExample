@@ -4,6 +4,8 @@ import android.graphics.Bitmap;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
+import org.opencv.core.Size;
+import org.opencv.imgproc.Imgproc;
 
 /**
  * This class is responsible for converting images from Android Bitmap objects to
@@ -11,7 +13,7 @@ import org.opencv.core.Mat;
  *
  * @author ArmandoNCM
  */
-public class ImageConversion {
+public class ImageProcessing {
 
     /**
      * Converts an Android Bitmap to an OpenCV Matrix (Mat)
@@ -33,5 +35,26 @@ public class ImageConversion {
         Bitmap bitmap = Bitmap.createBitmap(matrix.cols(), matrix.rows(), Bitmap.Config.ARGB_8888);
         Utils.matToBitmap(matrix, bitmap);
         return bitmap;
+    }
+
+    /**
+     * This function scales an image to the desired width while maintaining
+     * the aspect ratio
+     * @param image Image to be scaled
+     * @param desiredWidth Desired width of the scaled image
+     * @return Scaled image with the same aspect ratio
+     */
+    public static Mat scaleImage(Mat image, double desiredWidth){
+
+        Size size = image.size();
+        double aspectRatio = size.width / size.height;
+
+        double desiredHeight = desiredWidth / aspectRatio;
+
+        Size newSize = new Size(desiredWidth, desiredHeight);
+        Mat resizedImage = new Mat();
+        Imgproc.resize(image, resizedImage, newSize);
+
+        return resizedImage;
     }
 }

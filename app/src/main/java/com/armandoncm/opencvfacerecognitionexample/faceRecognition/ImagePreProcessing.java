@@ -22,16 +22,7 @@ import java.io.InputStream;
  */
 public class ImagePreProcessing {
 
-    /**
-     * Removes the Color information from an OpenCV Matrix
-     * @param matrix Original OpenCV Matrix to filter
-     * @return Gray Scale OpenCV Matrix
-     */
-    public static Mat removeColorInformation(Mat matrix){
-        Mat grayScaleMatrix = new Mat();
-        Imgproc.cvtColor(matrix, grayScaleMatrix, Imgproc.COLOR_RGB2GRAY);
-        return grayScaleMatrix;
-    }
+    public static final int DOWNSCALED_IMAGE_WIDTH = 320;
 
     /**
      * Rotates the given Android Bitmap to the correct orientation to display on an ImageView
@@ -104,5 +95,31 @@ public class ImagePreProcessing {
         }
     }
 
+    /**
+     * Removes the Color information from an OpenCV Matrix
+     * @param matrix Original OpenCV Matrix to filter
+     * @return Gray Scale OpenCV Matrix
+     */
+    public static Mat removeColorInformation(Mat matrix){
+        Mat grayScaleMatrix = new Mat();
+        Imgproc.cvtColor(matrix, grayScaleMatrix, Imgproc.COLOR_RGB2GRAY);
+        return grayScaleMatrix;
+    }
+
+    /**
+     * Down-scales the image to the recommended detection width
+     * @param image Image to be down-scaled
+     * @return Down-scaled image
+     */
+    public static Mat downscaleImage(Mat image){
+        return ImageProcessing.scaleImage(image, DOWNSCALED_IMAGE_WIDTH);
+    }
+
+
+    public static Mat equalizeHistogram(Mat image){
+        Mat equalizedImage = new Mat();
+        Imgproc.equalizeHist(image, equalizedImage);
+        return equalizedImage;
+    }
 
 }
