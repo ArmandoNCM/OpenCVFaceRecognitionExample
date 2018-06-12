@@ -19,6 +19,7 @@ public class ApplicationCore extends Application {
     public void onCreate() {
         super.onCreate();
         instance = this;
+        loadOpenCV();
     }
 
     /**

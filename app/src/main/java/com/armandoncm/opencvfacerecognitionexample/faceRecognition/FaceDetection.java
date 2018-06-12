@@ -7,12 +7,16 @@ import com.armandoncm.opencvfacerecognitionexample.ApplicationCore;
 
 import org.apache.commons.io.IOUtils;
 
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfRect;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
+import org.opencv.core.Scalar;
 import org.opencv.core.Size;
+import org.opencv.imgproc.Imgproc;
 import org.opencv.objdetect.CascadeClassifier;
+import org.opencv.objdetect.Objdetect;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -52,6 +56,19 @@ public class FaceDetection {
     // Right Eye Area Position
     private static final double RIGHT_EYE_AREA_X = 1.0 - LEFT_EYE_AREA_X - EYE_AREA_WIDTH;
     private static final double RIGHT_EYE_AREA_Y = LEFT_EYE_AREA_Y;
+    // Eye side indicator constants
+    private static final int LEFT_EYE = 1;
+    private static final int RIGHT_EYE = 2;
+    // Desired left eye position
+    private static final double DESIRED_LEFT_EYE_X = 0.16;
+    private static final double DESIRED_LEFT_EYE_Y = 0.14;
+    // Desired right eye position
+    private static final double DESIRED_RIGHT_EYE_X = 1.0 - DESIRED_LEFT_EYE_X;
+    private static final double DESIRED_RIGHT_EYE_Y = DESIRED_LEFT_EYE_Y;
+
+    // Desired face widht and height
+    private static final int DESIRED_FACE_WIDTH = 70;
+    private static final int DESIRED_FACE_HEIGHT = 70;
 
     // Singleton pattern instance holder
     private static FaceDetection instance;
@@ -166,7 +183,7 @@ public class FaceDetection {
          *      detection themselves, recommended values range from 3 to 6
          * flags: unused by the new implementation of cascade classifier
          */
-        faceClassifier.detectMultiScale(image, matOfRect, 1.3, 4, 0, MINIMUM_OBJECT_DETECTION_SIZE, MAXIMUM_OBJECT_DETECTION_SIZE);
+        faceClassifier.detectMultiScale(image, matOfRect, 1.3, 5, Objdetect.CASCADE_FIND_BIGGEST_OBJECT, MINIMUM_OBJECT_DETECTION_SIZE, MAXIMUM_OBJECT_DETECTION_SIZE);
 
         // Array of ROI's
         Rect[] rectangles = matOfRect.toArray();
@@ -192,7 +209,7 @@ public class FaceDetection {
      * @param faceImage Image of the whole face
      * @return Region of the image containing th left eye
      */
-    public Mat cropLeftEye(Mat faceImage){
+    private Mat cropLeftEye(Mat faceImage){
 
         Size imageSize = faceImage.size();
         Point eyeAreaCenterPoint = new Point(LEFT_EYE_AREA_X * imageSize.width, LEFT_EYE_AREA_Y * imageSize.height);
@@ -207,7 +224,7 @@ public class FaceDetection {
      * @param faceImage Image of the whole face
      * @return Region of the image containing the right eye
      */
-    public Mat cropRightEye(Mat faceImage){
+    private Mat cropRightEye(Mat faceImage){
 
         Size imageSize = faceImage.size();
         Point eyeAreaCenterPoint = new Point(RIGHT_EYE_AREA_X * imageSize.width, RIGHT_EYE_AREA_Y * imageSize.height);
@@ -237,6 +254,90 @@ public class FaceDetection {
             }
             return matrix.submat(largestRect);
         }
+    }
+
+    /**
+     * Detects an eye in the given region
+     * @param eyeRegion Eye region
+     * @param whichEye Indicator of whether it's the left or right eye
+     * @return Center of the detected eye
+     */
+    private Point detectEye(Mat eyeRegion, int whichEye){
+
+        MatOfRect detectedEyes = new MatOfRect();
+        Size regionSize = eyeRegion.size();
+        Size minSize = new Size(50, 50);
+
+
+
+        switch (whichEye) {
+            case LEFT_EYE:
+
+                Log.d("EYE-DETECTION", "Detecting Left Eye");
+                leftEyeClassifier.detectMultiScale(eyeRegion, detectedEyes, 1.05, 3, Objdetect.CASCADE_FIND_BIGGEST_OBJECT, minSize, regionSize);
+                break;
+
+            case RIGHT_EYE:
+
+                Log.d("EYE-DETECTION", "Detecting Right Eye");
+                rightEyeClassifier.detectMultiScale(eyeRegion, detectedEyes, 1.05, 3, Objdetect.CASCADE_FIND_BIGGEST_OBJECT, minSize, regionSize);
+                break;
+        }
+
+        Rect[] rectangles = detectedEyes.toArray();
+
+        if (rectangles.length > 0){
+            Rect eyeROI = rectangles[0];
+            Log.d("EYE-DETECTION", "Eye Detected");
+            return new Point(eyeROI.x + (eyeROI.width / 2), eyeROI.y + (eyeROI.height / 2));
+        }
+        Log.d("EYE-DETECTION", "Eye NOT Detected");
+        return null;
+    }
+
+    public Mat alignEyes(Mat face){
+
+        // Cropping of eye regions
+        Mat leftEyeRegion = cropLeftEye(face);
+        Mat rightEyeRegion = cropRightEye(face);
+        // Detecting position of eyes
+        Point leftEyePosition = detectEye(leftEyeRegion, LEFT_EYE);
+        Point rightEyePosition = detectEye(rightEyeRegion, RIGHT_EYE);
+        // Calculating center of eyes
+
+        if (leftEyePosition == null || rightEyePosition == null){
+            Log.w("EYE-DETECTION", "One or both eyes were not detected");
+            return face;
+        }
+        Point eyesCenter = new Point((leftEyePosition.x + rightEyePosition.x) * 0.5, (leftEyePosition.y + rightEyePosition.y) * 0.5);
+
+        double dx = rightEyePosition.x - leftEyePosition.x;
+        double dy = rightEyePosition.y - leftEyePosition.y;
+
+        double distance = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
+
+        double angle = Math.toDegrees(Math.atan2(dy, dx));
+
+        double desiredDistance = DESIRED_RIGHT_EYE_X - DESIRED_LEFT_EYE_X;
+
+        double scale = desiredDistance * DESIRED_FACE_WIDTH / distance;
+
+        Mat rotationMatrix = Imgproc.getRotationMatrix2D(eyesCenter, angle, scale);
+
+        double ex = DESIRED_FACE_WIDTH * 0.5 - eyesCenter.x;
+        double ey = DESIRED_FACE_HEIGHT * DESIRED_LEFT_EYE_Y - eyesCenter.y;
+
+        ex += rotationMatrix.get(0, 2)[0];
+        ey += rotationMatrix.get(1, 2)[0];
+
+        rotationMatrix.put(0,2, ex);
+        rotationMatrix.put(1,2, ey);
+
+        Mat warped = new Mat(DESIRED_FACE_HEIGHT, DESIRED_FACE_WIDTH, CvType.CV_8U, new Scalar(128));
+
+        Imgproc.warpAffine(face, warped, rotationMatrix, warped.size());
+
+        return warped;
     }
 
 

@@ -1,21 +1,16 @@
 package com.armandoncm.opencvfacerecognitionexample;
 
-import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
 import android.view.View;
 import android.widget.Button;
@@ -41,14 +36,10 @@ public class MainActivity extends Activity {
 
     private static final int REQUEST_TAKE_PHOTO = 1;
     private static final int REQUEST_SELECT_PHOTO = 2;
-    private static final int PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 100;
 
     private ImageView imageView;
 
     private Uri photoURI;
-
-    boolean permissionGranted;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,16 +50,11 @@ public class MainActivity extends Activity {
         buttonSelectImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (permissionGranted) {
-
-                    showSourceSelectionDialog();
-                }
+                showSourceSelectionDialog();
             }
         });
 
         imageView = findViewById(R.id.imageView);
-
-        checkPermissions();
 
     }
 
@@ -219,12 +205,17 @@ public class MainActivity extends Activity {
                     }
                 });
                 if (numberOfDetectedFaces > 0) {
-
+                    // Scale ROI to compensate for downscaling at the time of face detection
                     Rect faceROI = detectedFaceRectangles[0];
                     Size currentROISize = faceROI.size();
                     faceROI = new Rect(new Point(faceROI.x * scale, faceROI.y * scale), new Size(currentROISize.width * scale, currentROISize.height * scale));
+                    // Cropping of the original image
                     image = faceDetection.cropImage(image, faceROI);
+
+                    image = faceDetection.alignEyes(image);
+
                     image = ImageProcessing.scaleImage(image, 1000);
+
                 }
                 return ImageProcessing.convertMatrixToBitmap(image);
             } catch (IOException e) {
@@ -241,51 +232,6 @@ public class MainActivity extends Activity {
 
             imageView.setImageBitmap(bitmap);
 
-        }
-    }
-
-
-    public void checkPermissions() {
-        // Here, thisActivity is the current activity
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED) {
-
-            // No explanation needed; request the permission
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
-                    PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE);
-
-            // PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE is an
-            // app-defined int constant. The callback method gets the
-            // result of the request.
-        } else {
-            // Permission has already been granted
-            ApplicationCore.loadOpenCV();
-            permissionGranted = true;
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String permissions[], @NonNull int[] grantResults) {
-        switch (requestCode) {
-            case PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE: {
-                // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    // permission was granted, yay! Do the
-                    // contacts-related task you need to do.
-                    ApplicationCore.loadOpenCV();
-                    permissionGranted = true;
-                } else {
-                    // permission denied, boo! Disable the
-                    // functionality that depends on this permission.
-                    permissionGranted = false;
-                }
-            }
-            // other 'case' lines to check for other
-            // permissions this app might request.
         }
     }
 }
