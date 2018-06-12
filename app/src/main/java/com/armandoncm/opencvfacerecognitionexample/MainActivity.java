@@ -206,7 +206,7 @@ public class MainActivity extends Activity {
                 });
                 if (numberOfDetectedFaces > 0) {
                     // Scale ROI to compensate for downscaling at the time of face detection
-                    Rect faceROI = detectedFaceRectangles[0];
+                    Rect faceROI = faceDetection.pickTheLargestArea(detectedFaceRectangles);
                     Size currentROISize = faceROI.size();
                     faceROI = new Rect(new Point(faceROI.x * scale, faceROI.y * scale), new Size(currentROISize.width * scale, currentROISize.height * scale));
                     // Cropping of the original image

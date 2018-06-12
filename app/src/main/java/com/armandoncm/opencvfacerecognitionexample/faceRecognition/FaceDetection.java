@@ -34,13 +34,11 @@ public class FaceDetection {
 
     // Cache file names
     private static final String PRE_TRAINED_FACE_DATA_FILENAME = "opencv_face_data.xml";
-    private static final String PRE_TRAINED_LEFT_EYE_DATA_FILENAME = "opencv_left_eye_data.xml";
-    private static final String PRE_TRAINED_RIGHT_EYE_DATA_FILENAME = "opencv_right_eye_data.xml";
+    private static final String PRE_TRAINED_LEFT_EYE_DATA_FILENAME = "haarcascade_eye.xml";
 
     // Pre-trained data resource ID's
     private static final int PRE_TRAINED_FACE_DATA_RESOURCE_ID = org.opencv.R.raw.haarcascade_frontalface_default;
-    private static final int PRE_TRAINED_LEFT_EYE_DATA_RESOURCE_ID = org.opencv.R.raw.haarcascade_lefteye_2splits;
-    private static final int PRE_TRAINED_RIGHT_EYE_DATA_RESOURCE_ID = org.opencv.R.raw.haarcascade_righteye_2splits;
+    private static final int PRE_TRAINED_LEFT_EYE_DATA_RESOURCE_ID = org.opencv.R.raw.haarcascade_eye;
 
     // Minimum and Maximum size of detected objects (faces) in pixels
     private static final Size MINIMUM_OBJECT_DETECTION_SIZE = new Size(30,30);
@@ -48,35 +46,30 @@ public class FaceDetection {
 
     // The values are recommended values from the book referenced in the README
     // Eye Area Width and Height
-    private static final double EYE_AREA_WIDTH = 0.37;
-    private static final double EYE_AREA_HEIGHT = 0.36;
+    private static final double EYE_AREA_WIDTH = 0.3;
+    private static final double EYE_AREA_HEIGHT = 0.3;
     // Left Eye Area Position
-    private static final double LEFT_EYE_AREA_X = 0.12;
-    private static final double LEFT_EYE_AREA_Y = 0.17;
+    private static final double LEFT_EYE_AREA_X = 0.16;
+    private static final double LEFT_EYE_AREA_Y = 0.22;
     // Right Eye Area Position
-    private static final double RIGHT_EYE_AREA_X = 1.0 - LEFT_EYE_AREA_X - EYE_AREA_WIDTH;
+    private static final double RIGHT_EYE_AREA_X = 1.0 - LEFT_EYE_AREA_X - EYE_AREA_WIDTH + 0.03;
     private static final double RIGHT_EYE_AREA_Y = LEFT_EYE_AREA_Y;
-    // Eye side indicator constants
-    private static final int LEFT_EYE = 1;
-    private static final int RIGHT_EYE = 2;
     // Desired left eye position
     private static final double DESIRED_LEFT_EYE_X = 0.16;
     private static final double DESIRED_LEFT_EYE_Y = 0.14;
     // Desired right eye position
     private static final double DESIRED_RIGHT_EYE_X = 1.0 - DESIRED_LEFT_EYE_X;
-    private static final double DESIRED_RIGHT_EYE_Y = DESIRED_LEFT_EYE_Y;
 
-    // Desired face widht and height
-    private static final int DESIRED_FACE_WIDTH = 70;
-    private static final int DESIRED_FACE_HEIGHT = 70;
+    // Desired face width and height
+    private static final int DESIRED_FACE_WIDTH = 500;
+    private static final int DESIRED_FACE_HEIGHT = 500;
 
     // Singleton pattern instance holder
     private static FaceDetection instance;
 
     // Object Detection Classifiers
     private CascadeClassifier faceClassifier;
-    private CascadeClassifier leftEyeClassifier;
-    private CascadeClassifier rightEyeClassifier;
+    private CascadeClassifier eyeClassifier;
 
     /**
      * Singleton pattern instantiation
@@ -98,9 +91,7 @@ public class FaceDetection {
 
         initializeFaceClassifier();
 
-        initializeLeftEyeClassifier();
-
-        initializeRightEyeClassifier();
+        initializeEyeClassifier();
     }
 
     /**
@@ -148,23 +139,12 @@ public class FaceDetection {
     /**
      * Initializes the Left Eye Classifier
      */
-    private void initializeLeftEyeClassifier(){
+    private void initializeEyeClassifier(){
 
         String filePath = copyResourceToCache(PRE_TRAINED_LEFT_EYE_DATA_FILENAME, PRE_TRAINED_LEFT_EYE_DATA_RESOURCE_ID);
-        leftEyeClassifier = new CascadeClassifier(filePath);
-        leftEyeClassifier.load(filePath); // This code line is required in addition to passing the data in the constructor for the correct initialization of the Classifier
-        Log.d("CLASSIFIER", "Left Eye Classifier Correctly Initialized: " + !leftEyeClassifier.empty());
-    }
-
-    /**
-     * Initializes the Right Eye Classifier
-     */
-    private void initializeRightEyeClassifier(){
-
-        String filePath = copyResourceToCache(PRE_TRAINED_RIGHT_EYE_DATA_FILENAME, PRE_TRAINED_RIGHT_EYE_DATA_RESOURCE_ID);
-        rightEyeClassifier = new CascadeClassifier(filePath);
-        rightEyeClassifier.load(filePath); // This code line is required in addition to passing the data in the constructor for the correct initialization of the Classifier
-        Log.d("CLASSIFIER", "Right Eye Classifier Correctly Initialized: " + !rightEyeClassifier.empty());
+        eyeClassifier = new CascadeClassifier(filePath);
+        eyeClassifier.load(filePath); // This code line is required in addition to passing the data in the constructor for the correct initialization of the Classifier
+        Log.d("CLASSIFIER", "Left Eye Classifier Correctly Initialized: " + !eyeClassifier.empty());
     }
 
     /**
@@ -178,12 +158,12 @@ public class FaceDetection {
         MatOfRect matOfRect = new MatOfRect();
 
         /*
-         * scaleFactor: image is scaled down by 30%
+         * scaleFactor: image is scaled down by 5%
          * minNeighbors: The higher the lower chance of detection but higher quality of the
          *      detection themselves, recommended values range from 3 to 6
          * flags: unused by the new implementation of cascade classifier
          */
-        faceClassifier.detectMultiScale(image, matOfRect, 1.3, 5, Objdetect.CASCADE_FIND_BIGGEST_OBJECT, MINIMUM_OBJECT_DETECTION_SIZE, MAXIMUM_OBJECT_DETECTION_SIZE);
+        faceClassifier.detectMultiScale(image, matOfRect, 1.05, 5, Objdetect.CASCADE_FIND_BIGGEST_OBJECT, MINIMUM_OBJECT_DETECTION_SIZE, MAXIMUM_OBJECT_DETECTION_SIZE);
 
         // Array of ROI's
         Rect[] rectangles = matOfRect.toArray();
@@ -205,46 +185,43 @@ public class FaceDetection {
     }
 
     /**
-     * Crops the left eye region of the face
+     * Calculates the left eye region of the face
      * @param faceImage Image of the whole face
      * @return Region of the image containing th left eye
      */
-    private Mat cropLeftEye(Mat faceImage){
+    private Rect getLeftEyeRegion(Mat faceImage){
 
         Size imageSize = faceImage.size();
-        Point eyeAreaCenterPoint = new Point(LEFT_EYE_AREA_X * imageSize.width, LEFT_EYE_AREA_Y * imageSize.height);
+        Point eyeAreaTopLeftPoint = new Point(LEFT_EYE_AREA_X * imageSize.width, LEFT_EYE_AREA_Y * imageSize.height);
         Size eyeAreaSize = new Size(EYE_AREA_WIDTH * imageSize.width, EYE_AREA_HEIGHT * imageSize.height);
 
-        Rect leftEyeArea = new Rect(eyeAreaCenterPoint, eyeAreaSize);
-        return cropImage(faceImage, leftEyeArea);
+        return new Rect(eyeAreaTopLeftPoint, eyeAreaSize);
     }
 
     /**
-     * Crops the right eye region of the face
+     * Calculates the right eye region of the face
      * @param faceImage Image of the whole face
      * @return Region of the image containing the right eye
      */
-    private Mat cropRightEye(Mat faceImage){
+    private Rect getRightEyeRegion(Mat faceImage){
 
         Size imageSize = faceImage.size();
-        Point eyeAreaCenterPoint = new Point(RIGHT_EYE_AREA_X * imageSize.width, RIGHT_EYE_AREA_Y * imageSize.height);
+        Point eyeAreaTopLeftPoint = new Point(RIGHT_EYE_AREA_X * imageSize.width, RIGHT_EYE_AREA_Y * imageSize.height);
         Size eyeAreaSize = new Size(EYE_AREA_WIDTH * imageSize.width, EYE_AREA_HEIGHT * imageSize.height);
 
-        Rect rightEyeArea = new Rect(eyeAreaCenterPoint, eyeAreaSize);
-        return cropImage(faceImage, rightEyeArea);
+        return new Rect(eyeAreaTopLeftPoint, eyeAreaSize);
     }
 
     /**
-     * Picks the largest ROI out of a Matrix
-     * @param matrix Matrix where the largest ROI is going to be obtained from
-     * @param rectangles List of ROI's where the largest one is going to be picked from
-     * @return Largest ROI obtained from the image or the image unchanged if no ROI's were found
+     * Picks the largest rectangle out of an array
+     * @param rectangles List of rectangles
+     * @return Largest rectangle
      */
-    private Mat pickTheLargestArea(Mat matrix, Rect[] rectangles){
+    public Rect pickTheLargestArea(Rect[] rectangles){
         if (rectangles.length == 0){
-            return matrix;
+            return null;
         } else if (rectangles.length == 1){
-            return matrix.submat(rectangles[0]);
+            return rectangles[0];
         } else {
             Rect largestRect = rectangles[0];
             for (int i = 1; i < rectangles.length; i++){
@@ -252,63 +229,55 @@ public class FaceDetection {
                     largestRect = rectangles[i];
                 }
             }
-            return matrix.submat(largestRect);
+            return largestRect;
         }
     }
 
     /**
      * Detects an eye in the given region
      * @param eyeRegion Eye region
-     * @param whichEye Indicator of whether it's the left or right eye
      * @return Center of the detected eye
      */
-    private Point detectEye(Mat eyeRegion, int whichEye){
+    private Point detectEye(Mat eyeRegion){
 
         MatOfRect detectedEyes = new MatOfRect();
         Size regionSize = eyeRegion.size();
-        Size minSize = new Size(50, 50);
+        Size minSize = new Size(20, 20);
 
-
-
-        switch (whichEye) {
-            case LEFT_EYE:
-
-                Log.d("EYE-DETECTION", "Detecting Left Eye");
-                leftEyeClassifier.detectMultiScale(eyeRegion, detectedEyes, 1.05, 3, Objdetect.CASCADE_FIND_BIGGEST_OBJECT, minSize, regionSize);
-                break;
-
-            case RIGHT_EYE:
-
-                Log.d("EYE-DETECTION", "Detecting Right Eye");
-                rightEyeClassifier.detectMultiScale(eyeRegion, detectedEyes, 1.05, 3, Objdetect.CASCADE_FIND_BIGGEST_OBJECT, minSize, regionSize);
-                break;
-        }
+        eyeClassifier.detectMultiScale(eyeRegion, detectedEyes, 1.05, 5, Objdetect.CASCADE_FIND_BIGGEST_OBJECT, minSize, regionSize);
 
         Rect[] rectangles = detectedEyes.toArray();
-
         if (rectangles.length > 0){
-            Rect eyeROI = rectangles[0];
+            Rect eyeROI = pickTheLargestArea(rectangles);
             Log.d("EYE-DETECTION", "Eye Detected");
             return new Point(eyeROI.x + (eyeROI.width / 2), eyeROI.y + (eyeROI.height / 2));
+        } else {
+            Log.w("EYE-DETECTION", "NO Eye Detected");
+            return null;
         }
-        Log.d("EYE-DETECTION", "Eye NOT Detected");
-        return null;
     }
 
     public Mat alignEyes(Mat face){
 
+        // Calculating eye regions
+        Rect leftEyeRegionRectangle = getLeftEyeRegion(face);
+        Rect rightEyeRegionRectangle = getRightEyeRegion(face);
         // Cropping of eye regions
-        Mat leftEyeRegion = cropLeftEye(face);
-        Mat rightEyeRegion = cropRightEye(face);
+        Mat leftEyeRegion = cropImage(face, leftEyeRegionRectangle);
+        Mat rightEyeRegion = cropImage(face, rightEyeRegionRectangle);
         // Detecting position of eyes
-        Point leftEyePosition = detectEye(leftEyeRegion, LEFT_EYE);
-        Point rightEyePosition = detectEye(rightEyeRegion, RIGHT_EYE);
-        // Calculating center of eyes
+        Point leftEyePosition = detectEye(leftEyeRegion);
+        Point rightEyePosition = detectEye(rightEyeRegion);
 
         if (leftEyePosition == null || rightEyePosition == null){
             Log.w("EYE-DETECTION", "One or both eyes were not detected");
             return face;
         }
+
+        leftEyePosition = new Point(leftEyePosition.x + leftEyeRegionRectangle.x, leftEyePosition.y + leftEyeRegionRectangle.y);
+        rightEyePosition = new Point(rightEyePosition.x + rightEyeRegionRectangle.x, rightEyePosition.y + rightEyeRegionRectangle.y);
+
+        // Calculating center of eyes
         Point eyesCenter = new Point((leftEyePosition.x + rightEyePosition.x) * 0.5, (leftEyePosition.y + rightEyePosition.y) * 0.5);
 
         double dx = rightEyePosition.x - leftEyePosition.x;
