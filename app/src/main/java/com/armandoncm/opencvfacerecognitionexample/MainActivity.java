@@ -214,6 +214,8 @@ public class MainActivity extends Activity {
 
                     image = faceDetection.alignEyes(image);
 
+                    image = faceDetection.equalizeLight(image);
+
                     image = ImageProcessing.scaleImage(image, 1000);
 
                 }

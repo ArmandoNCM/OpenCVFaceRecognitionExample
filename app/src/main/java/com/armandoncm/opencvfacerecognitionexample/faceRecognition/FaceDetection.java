@@ -61,8 +61,8 @@ public class FaceDetection {
     private static final double DESIRED_RIGHT_EYE_X = 1.0 - DESIRED_LEFT_EYE_X;
 
     // Desired face width and height
-    private static final int DESIRED_FACE_WIDTH = 500;
-    private static final int DESIRED_FACE_HEIGHT = 500;
+    private static final int DESIRED_FACE_WIDTH = 320;
+    private static final int DESIRED_FACE_HEIGHT = 320;
 
     // Singleton pattern instance holder
     private static FaceDetection instance;
@@ -257,6 +257,11 @@ public class FaceDetection {
         }
     }
 
+    /**
+     * Rotates and warps the face to improve face recognition
+     * @param face Face image
+     * @return Rotated and warped image
+     */
     public Mat alignEyes(Mat face){
 
         // Calculating eye regions
@@ -309,5 +314,71 @@ public class FaceDetection {
         return warped;
     }
 
+    /**
+     * Uses separate histogram equalization to balance lighting conditions on both sides
+     * of the face
+     * @param image Image to be equalized
+     * @return Equalized Image
+     */
+    public Mat equalizeLight(Mat image){
+
+        double width = image.cols();
+        double height = image.rows();
+
+        double midX = width / 2;
+
+        Mat wholeFace = new Mat();
+        Imgproc.equalizeHist(image, wholeFace);
+
+        Mat leftSide = wholeFace.submat(new Rect(0, 0, (int) midX, (int) height));
+        Mat rightSide = wholeFace.submat(new Rect((int) midX, 0, (int) (width-midX), (int) height));
+
+        Imgproc.equalizeHist(leftSide, leftSide);
+        Imgproc.equalizeHist(rightSide, rightSide);
+
+        // Code exctracted and translated from C++ example in the book
+        // "Mastering OpenCV with Practical Computer Vision Projects" by Daniel Lelis Baggio
+
+        for (int y=0; y<height; y++) {
+            for (int x=0; x<width; x++) {
+                double v;
+                if (x < width/4) {
+                    // Left 25%: just use the left face.
+                    v = leftSide.get(y, x)[0]; //leftSide.at<uchar>(y,x);
+                }
+                else if (x < width * 2/4) {
+                    // Mid-left 25%: blend the left face & whole face.
+                    double lv = leftSide.get(y,x)[0]; //leftSide.at<uchar>(y,x);
+                    double wv = wholeFace.get(y,x)[0]; //wholeFace.at<uchar>(y,x);
+                    // Blend more of the whole face as it moves
+                    // further right along the face.
+                    double f = (x -  width * 1/4) / (width / 4);
+                    v =  Math.round((1.0f - f) * wv + (f) * lv);
+                }
+                else if (x < width * 3/4) {
+                    // Mid-right 25%: blend right face & whole face.
+                    double rv = rightSide.get(y, (int) (x-midX))[0]; //rightSide.at<uchar>(y,x-midX);
+                    double wv = wholeFace.get(y,x)[0]; //wholeFace.at<uchar>(y,x);
+                    // Blend more of the right-side face as it moves
+                    // further right along the face.
+                    double f = (x -  width *2/4) / (width / 4);
+                    v = Math.round((1.0f - f) * wv + (f) * rv);
+                }
+                else {
+                    // Right 25%: just use the right face.
+                    v = rightSide.get(y, (int) (x-midX))[0]; //rightSide.at<uchar>(y,x-midX);
+                }
+
+                image.put(y, x, v); //faceImg.at<uchar>(y,x) = v;
+            }// end x loop
+        }//end y loop
+
+
+        // Bilateral filtering to reduce noise
+        Mat filtered = new Mat(image.size(), CvType.CV_8U);
+        Imgproc.bilateralFilter(image, filtered, 0, 20.0, 2.0);
+
+        return filtered;
+    }
 
 }
