@@ -8,6 +8,8 @@ import com.armandoncm.opencvfacerecognitionexample.faceRecognition.FaceDetection
 import org.opencv.android.InstallCallbackInterface;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
+import org.opencv.contrib.FaceRecognizer;
+import org.opencv.core.Algorithm;
 
 public class ApplicationCore extends Application {
 
@@ -33,7 +35,7 @@ public class ApplicationCore extends Application {
             return;
         }
 
-        OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION, instance.getApplicationContext(), new LoaderCallbackInterface() {
+        OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_9, instance.getApplicationContext(), new LoaderCallbackInterface() {
             @Override
             public void onManagerConnected(int status) {
                 switch (status) {
@@ -41,6 +43,7 @@ public class ApplicationCore extends Application {
                         // The Library was successfully loaded
                         openCVLoaded = true;
                         FaceDetection.getInstance();
+
                         break;
 
                     default:
