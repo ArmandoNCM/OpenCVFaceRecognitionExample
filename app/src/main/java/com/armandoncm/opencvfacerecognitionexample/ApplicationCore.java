@@ -2,8 +2,11 @@ package com.armandoncm.opencvfacerecognitionexample;
 
 import android.app.Application;
 import android.content.Context;
-import android.util.Log;
 
+import com.armandoncm.opencvfacerecognitionexample.faceRecognition.FaceDetection;
+
+import org.opencv.android.InstallCallbackInterface;
+import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 
 public class ApplicationCore extends Application {
@@ -14,7 +17,6 @@ public class ApplicationCore extends Application {
 
     @Override
     public void onCreate() {
-
         super.onCreate();
         instance = this;
         loadOpenCV();
@@ -31,15 +33,36 @@ public class ApplicationCore extends Application {
             return;
         }
 
-        new Thread(new Runnable() {
+        OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_9, instance.getApplicationContext(), new LoaderCallbackInterface() {
             @Override
-            public void run() {
+            public void onManagerConnected(int status) {
+                switch (status) {
+                    case LoaderCallbackInterface.SUCCESS:
+                        // The Library was successfully loaded
+                        openCVLoaded = true;
+                        FaceDetection.getInstance();
 
-                openCVLoaded = OpenCVLoader.initDebug();
-                Log.d("NATIVE-LIBRARY", "Loaded Debug: " + openCVLoaded);
+                        break;
+
+                    default:
+
+
+                        break;
+                }
             }
-        }).start();
 
+            @Override
+            public void onPackageInstall(int operation, InstallCallbackInterface callback) {
+
+                switch (operation){
+                    case InstallCallbackInterface.NEW_INSTALLATION:
+                        // The user is required to install OpenCV Manager
+                        callback.install();
+                        break;
+                }
+
+            }
+        });
     }
 
     public static Context getContext(){
