@@ -34,11 +34,11 @@ public class FaceDetection {
 
     // Cache file names
     private static final String PRE_TRAINED_FACE_DATA_FILENAME = "opencv_face_data.xml";
-    private static final String PRE_TRAINED_LEFT_EYE_DATA_FILENAME = "haarcascade_eye.xml";
+    private static final String PRE_TRAINED_EYE_DATA_FILENAME = "haarcascade_eye.xml";
 
     // Pre-trained data resource ID's
     private static final int PRE_TRAINED_FACE_DATA_RESOURCE_ID = org.opencv.R.raw.haarcascade_frontalface_default;
-    private static final int PRE_TRAINED_LEFT_EYE_DATA_RESOURCE_ID = org.opencv.R.raw.haarcascade_eye;
+    private static final int PRE_TRAINED_EYE_DATA_RESOURCE_ID = org.opencv.R.raw.haarcascade_eye;
 
     // Minimum and Maximum size of detected objects (faces) in pixels
     private static final Size MINIMUM_OBJECT_DETECTION_SIZE = new Size(30,30);
@@ -137,14 +137,14 @@ public class FaceDetection {
     }
 
     /**
-     * Initializes the Left Eye Classifier
+     * Initializes the Eye Classifier
      */
     private void initializeEyeClassifier(){
 
-        String filePath = copyResourceToCache(PRE_TRAINED_LEFT_EYE_DATA_FILENAME, PRE_TRAINED_LEFT_EYE_DATA_RESOURCE_ID);
+        String filePath = copyResourceToCache(PRE_TRAINED_EYE_DATA_FILENAME, PRE_TRAINED_EYE_DATA_RESOURCE_ID);
         eyeClassifier = new CascadeClassifier(filePath);
         eyeClassifier.load(filePath); // This code line is required in addition to passing the data in the constructor for the correct initialization of the Classifier
-        Log.d("CLASSIFIER", "Left Eye Classifier Correctly Initialized: " + !eyeClassifier.empty());
+        Log.d("CLASSIFIER", "Eye Classifier Correctly Initialized: " + !eyeClassifier.empty());
     }
 
     /**

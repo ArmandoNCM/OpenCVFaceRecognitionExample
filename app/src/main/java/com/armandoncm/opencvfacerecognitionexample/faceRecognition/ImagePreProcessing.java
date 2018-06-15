@@ -115,7 +115,11 @@ public class ImagePreProcessing {
         return ImageProcessing.scaleImage(image, DOWNSCALED_IMAGE_WIDTH);
     }
 
-
+    /**
+     * Applies histogram equalization on an image
+     * @param image Image to be equalized
+     * @return Equalized image
+     */
     public static Mat equalizeHistogram(Mat image){
         Mat equalizedImage = new Mat();
         Imgproc.equalizeHist(image, equalizedImage);
