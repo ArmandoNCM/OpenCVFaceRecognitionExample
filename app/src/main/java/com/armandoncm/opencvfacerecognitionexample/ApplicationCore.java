@@ -15,11 +15,14 @@ public class ApplicationCore extends Application {
 
     private static boolean openCVLoaded = false;
 
+    private static final boolean USE_PREBUILT_LIBRARY = true;
+
     @Override
     public void onCreate() {
         super.onCreate();
         instance = this;
         loadOpenCV();
+
     }
 
     /**
@@ -33,7 +36,13 @@ public class ApplicationCore extends Application {
             return;
         }
 
-        OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_9, instance.getApplicationContext(), new LoaderCallbackInterface() {
+        if (USE_PREBUILT_LIBRARY) {
+            OpenCVLoader.initDebug();
+            FaceDetection.getInstance();
+            return;
+        }
+
+        OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION, instance.getApplicationContext(), new LoaderCallbackInterface() {
             @Override
             public void onManagerConnected(int status) {
                 switch (status) {

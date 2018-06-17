@@ -15,12 +15,15 @@ import android.support.v4.content.FileProvider;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.armandoncm.opencvfacerecognitionexample.faceRecognition.FaceDetection;
 import com.armandoncm.opencvfacerecognitionexample.faceRecognition.ImageProcessing;
-import com.armandoncm.opencvfacerecognitionexample.faceRecognition.ImagePreProcessing;
+import com.armandoncm.opencvfacerecognitionexample.faceRecognition.ModelTraining;
 
+import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
@@ -39,7 +42,11 @@ public class MainActivity extends Activity {
 
     private ImageView imageView;
 
+    private TextView textNumberOfFaces;
+
     private Uri photoURI;
+
+    private Button buttonTrainModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,8 +61,18 @@ public class MainActivity extends Activity {
             }
         });
 
+        buttonTrainModel = findViewById(R.id.btnTrainModel);
         imageView = findViewById(R.id.imageView);
 
+        // Show 0 in the initial count of added faces
+        textNumberOfFaces = findViewById(R.id.textNumFaces);
+        textNumberOfFaces.setText(String.valueOf(0));
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        ApplicationCore.loadOpenCV();
     }
 
     private File createImageFile() throws IOException {
@@ -179,15 +196,15 @@ public class MainActivity extends Activity {
 
             try {
                 // Image loading
-                Bitmap bitmap = ImagePreProcessing.loadBitmap(uris[0]);
+                Bitmap bitmap = ImageProcessing.loadBitmap(uris[0]);
 
                 // Image conversion to OpenCV Matrix (Mat)
                 Mat image = ImageProcessing.convertBitmapToMatrix(bitmap);
 
                 // Image Pre-Processing
-                image = ImagePreProcessing.removeColorInformation(image);
-                image = ImagePreProcessing.equalizeHistogram(image);
-                Mat downscaledImage = ImagePreProcessing.downscaleImage(image);
+                image = ImageProcessing.removeColorInformation(image);
+                image = ImageProcessing.equalizeHistogram(image);
+                Mat downscaledImage = ImageProcessing.downscaleImage(image);
 
                 double scale = image.size().width / downscaledImage.size().width;
 
@@ -196,14 +213,12 @@ public class MainActivity extends Activity {
                 Rect[] detectedFaceRectangles = faceDetection.detectFaces(downscaledImage);
 
                 final int numberOfDetectedFaces = detectedFaceRectangles.length;
-                MainActivity.this.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        String message = MainActivity.this.getResources().getString(R.string.msg_number_of_detected_faces);
-                        message = message.concat(": " + numberOfDetectedFaces);
-                        Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
-                    }
-                });
+
+                String message;
+                message = MainActivity.this.getResources().getString(R.string.msg_number_of_detected_faces);
+                message = message.concat(": " + numberOfDetectedFaces);
+                showToast(message);
+
                 if (numberOfDetectedFaces > 0) {
                     // Scale ROI to compensate for downscaling at the time of face detection
                     Rect faceROI = faceDetection.pickTheLargestArea(detectedFaceRectangles);
@@ -218,9 +233,9 @@ public class MainActivity extends Activity {
 
                     image = ImageProcessing.scaleImage(image, 1000);
 
+                    return ImageProcessing.convertMatrixToBitmap(image);
                 }
-                return ImageProcessing.convertMatrixToBitmap(image);
-            } catch (IOException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
 
@@ -235,5 +250,16 @@ public class MainActivity extends Activity {
             imageView.setImageBitmap(bitmap);
 
         }
+    }
+
+
+    private void showToast(final String message){
+        MainActivity.this.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+
+                Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
+            }
+        });
     }
 }

@@ -42,7 +42,7 @@ public class FaceDetection {
 
     // Minimum and Maximum size of detected objects (faces) in pixels
     private static final Size MINIMUM_OBJECT_DETECTION_SIZE = new Size(30,30);
-    private static final Size MAXIMUM_OBJECT_DETECTION_SIZE = new Size(ImagePreProcessing.DOWNSCALED_IMAGE_WIDTH, ImagePreProcessing.DOWNSCALED_IMAGE_WIDTH * 2);
+    private static final Size MAXIMUM_OBJECT_DETECTION_SIZE = new Size(ImageProcessing.DOWNSCALED_IMAGE_WIDTH, ImageProcessing.DOWNSCALED_IMAGE_WIDTH * 2);
 
     // The values are recommended values from the book referenced in the README
     // Eye Area Width and Height
@@ -61,8 +61,8 @@ public class FaceDetection {
     private static final double DESIRED_RIGHT_EYE_X = 1.0 - DESIRED_LEFT_EYE_X;
 
     // Desired face width and height
-    private static final int DESIRED_FACE_WIDTH = 320;
-    private static final int DESIRED_FACE_HEIGHT = 320;
+    public static final int DESIRED_FACE_WIDTH = 320;
+    public static final int DESIRED_FACE_HEIGHT = 320;
 
     // Singleton pattern instance holder
     private static FaceDetection instance;
@@ -261,8 +261,9 @@ public class FaceDetection {
      * Rotates and warps the face to improve face recognition
      * @param face Face image
      * @return Rotated and warped image
+     * @throws Exception if the eyes were not correctly detected
      */
-    public Mat alignEyes(Mat face){
+    public Mat alignEyes(Mat face) throws Exception{
 
         // Calculating eye regions
         Rect leftEyeRegionRectangle = getLeftEyeRegion(face);
@@ -275,8 +276,7 @@ public class FaceDetection {
         Point rightEyePosition = detectEye(rightEyeRegion);
 
         if (leftEyePosition == null || rightEyePosition == null){
-            Log.w("EYE-DETECTION", "One or both eyes were not detected");
-            return face;
+            throw new Exception("One or both eyes were not detected");
         }
 
         leftEyePosition = new Point(leftEyePosition.x + leftEyeRegionRectangle.x, leftEyePosition.y + leftEyeRegionRectangle.y);

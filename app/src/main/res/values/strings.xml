@@ -1,9 +1,12 @@
 <resources>
     <string name="app_name">OpenCVFaceRecognitionExample</string>
-    <string name="btn_select_image">Select Image</string>
+    <string name="btn_select_image">Add Image</string>
     <string name="msg_image_selection_cancelled">Image Selection Cancelled</string>
     <string name="title_select_image_source">Select Image Source</string>
     <string name="option_select_from_gallery">Select from Gallery</string>
     <string name="option_capture_from_camera">Capture from Camera</string>
     <string name="msg_number_of_detected_faces">Number of Detected Faces</string>
+    <string name="lbl_number_of_added_faces">Num Faces: </string>
+    <string name="btn_train_face_recognition_model">Train Model</string>
+    <string name="msg_showing_mean_face">Showing Mean Face</string>
 </resources>
