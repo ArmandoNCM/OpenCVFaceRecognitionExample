@@ -61,8 +61,8 @@ public class FaceDetection {
     private static final double DESIRED_RIGHT_EYE_X = 1.0 - DESIRED_LEFT_EYE_X;
 
     // Desired face width and height
-    public static final int DESIRED_FACE_WIDTH = 320;
-    public static final int DESIRED_FACE_HEIGHT = 320;
+    public static final int DESIRED_FACE_WIDTH = 100;
+    public static final int DESIRED_FACE_HEIGHT = 100;
 
     // Singleton pattern instance holder
     private static FaceDetection instance;

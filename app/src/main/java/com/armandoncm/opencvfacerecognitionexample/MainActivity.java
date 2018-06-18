@@ -18,6 +18,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.armandoncm.opencvfacerecognitionexample.faceRecognition.DataManagement;
 import com.armandoncm.opencvfacerecognitionexample.faceRecognition.FaceDetection;
 import com.armandoncm.opencvfacerecognitionexample.faceRecognition.ImageProcessing;
 import com.armandoncm.opencvfacerecognitionexample.faceRecognition.ModelTraining;
@@ -72,19 +73,47 @@ public class MainActivity extends Activity {
         buttonTrainModel.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                try {
-                    modelTraining.trainModel();
-                    Mat obtainedImage = modelTraining.getMean();
-                    obtainedImage = ImageProcessing.reshapeFace(obtainedImage);
-                    Core.normalize(obtainedImage, obtainedImage, 0, 255, Core.NORM_MINMAX, CvType.CV_8U);
-                    obtainedImage = ImageProcessing.scaleImage(obtainedImage, 1000);
-                    Bitmap bitmap = ImageProcessing.convertMatrixToBitmap(obtainedImage);
-                    imageView.setImageBitmap(bitmap);
+
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+
+                            try {
+                                modelTraining.trainModel();
+
+                                new Thread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        try {
+                                            Mat data = new Mat();
+                                            modelTraining.getEigenVectors().copyTo(data);
+                                            data.push_back(modelTraining.getMean());
+
+                                            DataManagement.exportData("test", modelTraining.getEigenVectors());
+                                        } catch (Exception e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                }).start();
+
+                                Mat obtainedImage = modelTraining.getMean();
+                                obtainedImage = ImageProcessing.reshapeFace(obtainedImage);
+                                Core.normalize(obtainedImage, obtainedImage, 0, 255, Core.NORM_MINMAX, CvType.CV_8U);
+                                obtainedImage = ImageProcessing.scaleImage(obtainedImage, 1000);
+
+                                Bitmap bitmap = ImageProcessing.convertMatrixToBitmap(obtainedImage);
+                                updateImageView(bitmap);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                                showToast(e.getMessage());
+                            }
+                        }
+                    }).start();
+
+
+
                     showToast(getResources().getString(R.string.msg_showing_mean_face));
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    showToast(e.getMessage());
-                }
+
             }
         });
 
@@ -96,6 +125,8 @@ public class MainActivity extends Activity {
 
         modelTraining = new ModelTraining();
 
+
+        loadSavedMeanImage();
     }
 
     @Override
@@ -280,7 +311,7 @@ public class MainActivity extends Activity {
         protected void onPostExecute(Bitmap bitmap) {
             super.onPostExecute(bitmap);
 
-            imageView.setImageBitmap(bitmap);
+            updateImageView(bitmap);
 
         }
     }
@@ -303,5 +334,33 @@ public class MainActivity extends Activity {
                 Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
             }
         });
+    }
+
+    private void updateImageView(final Bitmap bitmap){
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                imageView.setImageBitmap(bitmap);
+            }
+        });
+    }
+
+    private void loadSavedMeanImage(){
+        try {
+            Mat data = DataManagement.deserializeData("test");
+
+            Mat obtainedImage = data.row(data.rows() - 1);
+            obtainedImage = ImageProcessing.reshapeFace(obtainedImage);
+
+            Core.normalize(obtainedImage, obtainedImage, 0, 255, Core.NORM_MINMAX, CvType.CV_8U);
+            obtainedImage = ImageProcessing.scaleImage(obtainedImage, 1000);
+
+            Bitmap bitmap = ImageProcessing.convertMatrixToBitmap(obtainedImage);
+            updateImageView(bitmap);
+
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
