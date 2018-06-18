@@ -7,15 +7,31 @@ import org.opencv.core.Mat;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * This class is responsible for the PCA Computation from the training faces
+ *
+ * @author ArmandoNCM
+ */
 public class ModelTraining {
 
+    /**
+     * Array of faces
+     */
     private List<Mat> faces;
 
-    private Mat lastFaceAdded;
-
+    /**
+     * Mean face obtained from training
+     */
     private Mat mean;
+
+    /**
+     * Eigen-vectors obtained from training
+     */
     private Mat eigenVectors;
 
+    /**
+     * Creates an instance of ModelTraining with an empty faces array
+     */
     public ModelTraining(){
 
         faces = new ArrayList<>();
@@ -35,6 +51,14 @@ public class ModelTraining {
      */
     public Mat getMean(){
         return mean;
+    }
+
+    /**
+     * Obtains the eigen vectors obtained from the PCA computation
+     * @return Eigenvectors
+     */
+    public Mat getEigenVectors() {
+        return eigenVectors;
     }
 
     /**
@@ -90,7 +114,7 @@ public class ModelTraining {
 
     public void trainModel() throws Exception{
 
-        if (faces.size() == 0) {
+        if (faces.size() < 2) {
             throw new Exception("No faces have been added");
         }
 
@@ -105,7 +129,6 @@ public class ModelTraining {
      */
     public void addFace(Mat image) {
         faces.add(image);
-        lastFaceAdded = image;
     }
 
 }

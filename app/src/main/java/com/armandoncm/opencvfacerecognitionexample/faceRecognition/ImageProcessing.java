@@ -69,8 +69,13 @@ public class ImageProcessing {
         return resizedImage;
     }
 
-    public static Mat reshapeBackToNormal(Mat matrix){
-        return matrix.reshape(0, FaceDetection.DESIRED_FACE_HEIGHT);
+    /**
+     * Reshapes a face image back to the original dimensions
+     * @param face Face image to be reshaped
+     * @return Reshaped face
+     */
+    public static Mat reshapeFace(Mat face){
+        return face.reshape(0, FaceDetection.DESIRED_FACE_HEIGHT);
     }
 
     public static final int DOWNSCALED_IMAGE_WIDTH = 320;
@@ -236,11 +241,11 @@ public class ImageProcessing {
             }// end x loop
         }//end y loop
 
-
         // Bilateral filtering to reduce noise
         Mat filtered = new Mat(image.size(), CvType.CV_8U);
         Imgproc.bilateralFilter(image, filtered, 0, 20.0, 2.0);
 
         return filtered;
     }
+
 }

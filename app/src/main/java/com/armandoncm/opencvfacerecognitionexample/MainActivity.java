@@ -37,17 +37,23 @@ import java.util.Locale;
 
 public class MainActivity extends Activity {
 
+    // Activity for result request codes
     private static final int REQUEST_TAKE_PHOTO = 1;
     private static final int REQUEST_SELECT_PHOTO = 2;
 
+    // Views
     private ImageView imageView;
-
     private TextView textNumberOfFaces;
 
+    /**
+     * URI of the last photo captured by the camera using the app
+     */
     private Uri photoURI;
 
+    /**
+     * Instance of ModelTraining used to obtain the Mean face and Eigen-vectors
+     */
     private ModelTraining modelTraining;
-    private Button buttonTrainModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,17 +68,17 @@ public class MainActivity extends Activity {
             }
         });
 
-        buttonTrainModel = findViewById(R.id.btnTrainModel);
+        Button buttonTrainModel = findViewById(R.id.btnTrainModel);
         buttonTrainModel.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 try {
                     modelTraining.trainModel();
-                    Mat mean = modelTraining.getMean();
-                    mean = ImageProcessing.reshapeBackToNormal(mean);
-                    Core.normalize(mean, mean, 0, 255, Core.NORM_MINMAX, CvType.CV_8U);
-                    mean = ImageProcessing.scaleImage(mean, 1000);
-                    Bitmap bitmap = ImageProcessing.convertMatrixToBitmap(mean);
+                    Mat obtainedImage = modelTraining.getMean();
+                    obtainedImage = ImageProcessing.reshapeFace(obtainedImage);
+                    Core.normalize(obtainedImage, obtainedImage, 0, 255, Core.NORM_MINMAX, CvType.CV_8U);
+                    obtainedImage = ImageProcessing.scaleImage(obtainedImage, 1000);
+                    Bitmap bitmap = ImageProcessing.convertMatrixToBitmap(obtainedImage);
                     imageView.setImageBitmap(bitmap);
                     showToast(getResources().getString(R.string.msg_showing_mean_face));
                 } catch (Exception e) {
