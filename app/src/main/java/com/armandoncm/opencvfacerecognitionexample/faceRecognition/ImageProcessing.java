@@ -9,7 +9,9 @@ import android.support.media.ExifInterface;
 import com.armandoncm.opencvfacerecognitionexample.ApplicationCore;
 
 import org.opencv.android.Utils;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.Rect;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
@@ -173,5 +175,72 @@ public class ImageProcessing {
         Mat equalizedImage = new Mat();
         Imgproc.equalizeHist(image, equalizedImage);
         return equalizedImage;
+    }
+
+    /**
+     * Uses separate histogram equalization to balance lighting conditions on both sides
+     * of the face
+     * @param image Image to be equalized
+     * @return Equalized Image
+     */
+    public static Mat equalizeLight(Mat image){
+
+        double width = image.cols();
+        double height = image.rows();
+
+        double midX = width / 2;
+
+        Mat wholeImage = new Mat();
+        Imgproc.equalizeHist(image, wholeImage);
+
+        Mat leftSide = wholeImage.submat(new Rect(0, 0, (int) midX, (int) height));
+        Mat rightSide = wholeImage.submat(new Rect((int) midX, 0, (int) (width-midX), (int) height));
+
+        Imgproc.equalizeHist(leftSide, leftSide);
+        Imgproc.equalizeHist(rightSide, rightSide);
+
+        // Code extracted and translated from C++ example in the book
+        // "Mastering OpenCV with Practical Computer Vision Projects" by Daniel Lelis Baggio
+
+        for (int y=0; y<height; y++) {
+            for (int x=0; x<width; x++) {
+                double v;
+                if (x < width/4) {
+                    // Left 25%: just use the left face.
+                    v = leftSide.get(y, x)[0]; //leftSide.at<uchar>(y,x);
+                }
+                else if (x < width * 2/4) {
+                    // Mid-left 25%: blend the left face & whole face.
+                    double lv = leftSide.get(y,x)[0]; //leftSide.at<uchar>(y,x);
+                    double wv = wholeImage.get(y,x)[0]; //wholeFace.at<uchar>(y,x);
+                    // Blend more of the whole face as it moves
+                    // further right along the face.
+                    double f = (x -  width * 1/4) / (width / 4);
+                    v =  Math.round((1.0f - f) * wv + (f) * lv);
+                }
+                else if (x < width * 3/4) {
+                    // Mid-right 25%: blend right face & whole face.
+                    double rv = rightSide.get(y, (int) (x-midX))[0]; //rightSide.at<uchar>(y,x-midX);
+                    double wv = wholeImage.get(y,x)[0]; //wholeFace.at<uchar>(y,x);
+                    // Blend more of the right-side face as it moves
+                    // further right along the face.
+                    double f = (x -  width *2/4) / (width / 4);
+                    v = Math.round((1.0f - f) * wv + (f) * rv);
+                }
+                else {
+                    // Right 25%: just use the right face.
+                    v = rightSide.get(y, (int) (x-midX))[0]; //rightSide.at<uchar>(y,x-midX);
+                }
+
+                image.put(y, x, v); //faceImg.at<uchar>(y,x) = v;
+            }// end x loop
+        }//end y loop
+
+
+        // Bilateral filtering to reduce noise
+        Mat filtered = new Mat(image.size(), CvType.CV_8U);
+        Imgproc.bilateralFilter(image, filtered, 0, 20.0, 2.0);
+
+        return filtered;
     }
 }

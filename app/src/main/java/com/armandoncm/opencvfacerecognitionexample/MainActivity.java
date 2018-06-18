@@ -46,6 +46,7 @@ public class MainActivity extends Activity {
 
     private Uri photoURI;
 
+    private ModelTraining modelTraining;
     private Button buttonTrainModel;
 
     @Override
@@ -62,11 +63,33 @@ public class MainActivity extends Activity {
         });
 
         buttonTrainModel = findViewById(R.id.btnTrainModel);
+        buttonTrainModel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    modelTraining.trainModel();
+                    Mat mean = modelTraining.getMean();
+                    mean = ImageProcessing.reshapeBackToNormal(mean);
+                    Core.normalize(mean, mean, 0, 255, Core.NORM_MINMAX, CvType.CV_8U);
+                    mean = ImageProcessing.scaleImage(mean, 1000);
+                    Bitmap bitmap = ImageProcessing.convertMatrixToBitmap(mean);
+                    imageView.setImageBitmap(bitmap);
+                    showToast(getResources().getString(R.string.msg_showing_mean_face));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    showToast(e.getMessage());
+                }
+            }
+        });
+
         imageView = findViewById(R.id.imageView);
 
         // Show 0 in the initial count of added faces
         textNumberOfFaces = findViewById(R.id.textNumFaces);
         textNumberOfFaces.setText(String.valueOf(0));
+
+        modelTraining = new ModelTraining();
+
     }
 
     @Override
@@ -229,7 +252,11 @@ public class MainActivity extends Activity {
 
                     image = faceDetection.alignEyes(image);
 
-                    image = faceDetection.equalizeLight(image);
+                    image = ImageProcessing.equalizeLight(image);
+
+                    modelTraining.addFace(image);
+
+                    updateNumberOfFaces();
 
                     image = ImageProcessing.scaleImage(image, 1000);
 
@@ -252,6 +279,15 @@ public class MainActivity extends Activity {
         }
     }
 
+    public void updateNumberOfFaces(){
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+
+                textNumberOfFaces.setText(String.valueOf(modelTraining.getNumberOfAddedFaces()));
+            }
+        });
+    }
 
     private void showToast(final String message){
         MainActivity.this.runOnUiThread(new Runnable() {
