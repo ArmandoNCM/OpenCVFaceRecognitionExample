@@ -23,19 +23,18 @@
         android:id="@+id/btnSelectImage"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="24dp"
+        android:layout_marginBottom="32dp"
+        android:layout_marginEnd="16dp"
         android:text="@string/btn_select_image"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.73"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <TextView
         android:id="@+id/labelNumFaces"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="35dp"
-        android:layout_marginStart="24dp"
+        android:layout_marginBottom="12dp"
+        android:layout_marginStart="136dp"
         android:text="@string/lbl_number_of_added_faces"
         app:layout_constraintBottom_toTopOf="@+id/btnTrainModel"
         app:layout_constraintStart_toStartOf="parent" />
@@ -52,12 +51,21 @@
         android:id="@+id/btnTrainModel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="24dp"
-        android:layout_marginEnd="52dp"
+        android:layout_marginBottom="32dp"
+        android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
         android:text="@string/btn_train_face_recognition_model"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/btnSelectImage"
-        app:layout_constraintHorizontal_bias="0.977"
+        app:layout_constraintStart_toEndOf="@+id/btnTest" />
+
+    <Button
+        android:id="@+id/btnTest"
+        android:layout_width="88dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="32dp"
+        android:layout_marginStart="16dp"
+        android:text="@string/btn_test_image"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 </android.support.constraint.ConstraintLayout>

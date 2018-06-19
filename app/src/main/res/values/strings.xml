@@ -9,4 +9,5 @@
     <string name="lbl_number_of_added_faces">Num Faces: </string>
     <string name="btn_train_face_recognition_model">Train Model</string>
     <string name="msg_showing_mean_face">Showing Mean Face</string>
+    <string name="btn_test_image">Test</string>
 </resources>

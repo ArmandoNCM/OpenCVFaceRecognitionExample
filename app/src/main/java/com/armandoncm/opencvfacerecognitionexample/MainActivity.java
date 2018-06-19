@@ -89,7 +89,7 @@ public class MainActivity extends Activity {
                                             modelTraining.getEigenVectors().copyTo(data);
                                             data.push_back(modelTraining.getMean());
 
-                                            DataManagement.exportData("test", modelTraining.getEigenVectors());
+                                            DataManagement.exportData("test", data);
                                         } catch (Exception e) {
                                             e.printStackTrace();
                                         }
@@ -114,6 +114,19 @@ public class MainActivity extends Activity {
 
                     showToast(getResources().getString(R.string.msg_showing_mean_face));
 
+            }
+        });
+
+        Button buttonTest = findViewById(R.id.btnTest);
+        buttonTest.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showToast("Test");
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                    }
+                }).start();
             }
         });
 

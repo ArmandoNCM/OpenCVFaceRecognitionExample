@@ -39,6 +39,7 @@ public class ApplicationCore extends Application {
         if (USE_PREBUILT_LIBRARY) {
             OpenCVLoader.initDebug();
             FaceDetection.getInstance();
+            openCVLoaded = true;
             return;
         }
 
