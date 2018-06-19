@@ -125,6 +125,20 @@ public class MainActivity extends Activity {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
+                        try {
+
+                            if (modelTraining != null){
+//                                modelTraining.test();
+                                Mat reconstruction = modelTraining.reconstruct();
+                                reconstruction = ImageProcessing.scaleImage(reconstruction, 1000);
+
+                                Bitmap bitmap = ImageProcessing.convertMatrixToBitmap(reconstruction);
+                                updateImageView(bitmap);
+
+                            }
+                        } catch (Exception e){
+                            e.printStackTrace();
+                        }
                     }
                 }).start();
             }
