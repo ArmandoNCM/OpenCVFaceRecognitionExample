@@ -13,6 +13,7 @@ import org.opencv.ml.SVM;
 import org.opencv.ml.StatModel;
 import org.opencv.ml.TrainData;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -122,35 +123,39 @@ public class ModelTraining {
     private void trainModel(Mat trainingSet){
 
         // Initializing matrices
-        mean = new Mat();
-        eigenVectors = new Mat();
+//        mean = new Mat();
+//        eigenVectors = new Mat();
         // Computing the mean, the eigenVectors and the eigenValues
-        Core.PCACompute(trainingSet, mean, eigenVectors, 300);
+//        Core.PCACompute(trainingSet, mean, eigenVectors, 300);
 
-        inspectMat(eigenVectors);
+//        inspectMat(eigenVectors);
 
 //        Mat result = new Mat();
 //        Core.PCAProject(trainingSet, mean, eigenVectors, result);
 //        inspectMat(result);
 
-        Mat responses = new Mat(eigenVectors.rows(),1,CvType.CV_32S);
+//        Mat responses = new Mat(eigenVectors.rows(),1,CvType.CV_32S);
+        Mat responses = new Mat(0,0,CvType.CV_32S);
 
-        TrainData trainData = TrainData.create(eigenVectors, Ml.ROW_SAMPLE, responses);
 
         SVM svm = SVM.create();
-        svm.setType(SVM.C_SVC);
-        svm.setKernel(SVM.LINEAR);
+        svm.setType(SVM.ONE_CLASS);
+        svm.setKernel(SVM.RBF);
+        svm.setGamma(3);
+        svm.setC(5);
+        svm.setNu(0.5);
 
-//        svm.trainAuto(eigenVectors, Ml.ROW_SAMPLE, responses);
+        trainingSet.convertTo(trainingSet, CvType.CV_32FC1);
+
+        svm.trainAuto(trainingSet, Ml.ROW_SAMPLE, responses);
 
         statModel = svm;
-        statModel.train(trainData);
 
     }
 
     public void trainModel() throws Exception{
 
-        if (faces.size() < 2) {
+        if (faces.size() == 0) {
             throw new Exception("No faces have been added");
         }
 
@@ -187,48 +192,16 @@ public class ModelTraining {
 
         Mat testData = createTrainingMatrix(new Mat[]{lastFace});
 
-        Mat eigenVectors = new Mat();
-        Core.PCACompute(testData, mean, eigenVectors, 10);
-
-        inspectMat(eigenVectors);
-
-//        Mat projected = new Mat();
-//        Core.PCAProject(testData, mean, eigenVectors, projected);
-//        inspectMat(projected);
+        testData.convertTo(testData, CvType.CV_32FC1);
 
         Mat results = new Mat();
-        float prediction = statModel.predict(eigenVectors, results, StatModel.RAW_OUTPUT);
-//        float prediction = statModel.predict(eigenVectors);
-        inspectMat(results);
+        float prediction = statModel.predict(testData.reshape(1, 1), results, StatModel.RAW_OUTPUT);
+//        float prediction = statModel.predict(testData.reshape(1,1));
+        double result = results.get(0,0)[0];
+//        inspectMat(results);
 
         Log.d("PREDICTION", "Prediction: " + prediction);
-
-    }
-
-
-    public Mat reconstruct(){
-
-        Mat image = lastFace;
-        image = image.reshape(1, 1);
-        inspectMat(image);
-
-        int numberOfComponents = 50;
-        Mat truncatedEigenVectors = new Mat(eigenVectors, Range.all(), new Range(0, numberOfComponents));
-        inspectMat(truncatedEigenVectors);
-
-        Mat projection = new Mat();
-        Core.PCAProject(image, mean, truncatedEigenVectors, projection);
-
-        inspectMat(projection);
-
-        Mat reconstruction = new Mat();
-        Core.PCABackProject(projection, mean, truncatedEigenVectors, reconstruction);
-
-        reconstruction = reconstruction.reshape(1, FaceDetection.DESIRED_FACE_HEIGHT);
-
-        Core.normalize(reconstruction, reconstruction, 0, 255, Core.NORM_MINMAX, CvType.CV_8U);
-
-        return reconstruction;
+        Log.d("PREDICTION-RESULT", "Result: " + result);
 
     }
 
