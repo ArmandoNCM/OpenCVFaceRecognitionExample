@@ -1,5 +1,6 @@
 package com.armandoncm.opencvfacerecognitionexample.faceRecognition;
 
+import android.annotation.SuppressLint;
 import android.util.Log;
 
 import org.opencv.core.Core;
@@ -25,11 +26,6 @@ import java.util.List;
 public class ModelTraining {
 
     /**
-     * Last face added
-     */
-    private Mat lastFace;
-
-    /**
      * Array of faces
      */
     private List<Mat> faces;
@@ -44,6 +40,9 @@ public class ModelTraining {
      */
     private Mat eigenVectors;
 
+    /**
+     * Model used in facial recognition
+     */
     private StatModel statModel;
 
     /**
@@ -123,21 +122,17 @@ public class ModelTraining {
     private void trainModel(Mat trainingSet){
 
         // Initializing matrices
-//        mean = new Mat();
-//        eigenVectors = new Mat();
+        mean = new Mat();
+        eigenVectors = new Mat();
         // Computing the mean, the eigenVectors and the eigenValues
-//        Core.PCACompute(trainingSet, mean, eigenVectors, 300);
+        Core.PCACompute(trainingSet, mean, eigenVectors);
 
-//        inspectMat(eigenVectors);
+        // Projection of the
+        Mat projection = new Mat();
+        Core.PCAProject(trainingSet, mean, eigenVectors, projection);
+        inspectMat(projection);
 
-//        Mat result = new Mat();
-//        Core.PCAProject(trainingSet, mean, eigenVectors, result);
-//        inspectMat(result);
-
-//        Mat responses = new Mat(eigenVectors.rows(),1,CvType.CV_32S);
-        Mat responses = new Mat(0,0,CvType.CV_32S);
-
-
+        // Creation of the Support Vector Machine
         SVM svm = SVM.create();
         svm.setType(SVM.ONE_CLASS);
         svm.setKernel(SVM.RBF);
@@ -145,8 +140,7 @@ public class ModelTraining {
         svm.setC(5);
         svm.setNu(0.5);
 
-        trainingSet.convertTo(trainingSet, CvType.CV_32FC1);
-
+        Mat responses = new Mat(0,0,CvType.CV_32S);
         svm.trainAuto(trainingSet, Ml.ROW_SAMPLE, responses);
 
         statModel = svm;
@@ -170,9 +164,15 @@ public class ModelTraining {
      */
     public void addFace(Mat image) {
         faces.add(image);
-        lastFace = image;
     }
 
+    /**
+     * This method is used for debugging purposes
+     * It inspects an OpenCV Matrix (Mat) object
+     * If you put a breakpoint on it, you can see the
+     * contents of a given Matrix
+     * @param mat Matrix to inspect
+     */
     private static void inspectMat(Mat mat){
 
         int rows = mat.rows();
@@ -183,26 +183,9 @@ public class ModelTraining {
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < columns; j++) {
                 value = mat.get(i,j)[0];
+                //noinspection UnusedAssignment
                 value = value * 1;
             }
         }
     }
-
-    public void test(){
-
-        Mat testData = createTrainingMatrix(new Mat[]{lastFace});
-
-        testData.convertTo(testData, CvType.CV_32FC1);
-
-        Mat results = new Mat();
-        float prediction = statModel.predict(testData.reshape(1, 1), results, StatModel.RAW_OUTPUT);
-//        float prediction = statModel.predict(testData.reshape(1,1));
-        double result = results.get(0,0)[0];
-//        inspectMat(results);
-
-        Log.d("PREDICTION", "Prediction: " + prediction);
-        Log.d("PREDICTION-RESULT", "Result: " + result);
-
-    }
-
 }

@@ -81,28 +81,28 @@ public class MainActivity extends Activity {
                             try {
                                 modelTraining.trainModel();
 
-//                                new Thread(new Runnable() {
-//                                    @Override
-//                                    public void run() {
-//                                        try {
-//                                            Mat data = new Mat();
-//                                            modelTraining.getEigenVectors().copyTo(data);
-//                                            data.push_back(modelTraining.getMean());
-//
-//                                            DataManagement.exportData("test", data);
-//                                        } catch (Exception e) {
-//                                            e.printStackTrace();
-//                                        }
-//                                    }
-//                                }).start();
-//
-//                                Mat obtainedImage = modelTraining.getMean();
-//                                obtainedImage = ImageProcessing.reshapeFace(obtainedImage);
-//                                Core.normalize(obtainedImage, obtainedImage, 0, 255, Core.NORM_MINMAX, CvType.CV_8U);
-//                                obtainedImage = ImageProcessing.scaleImage(obtainedImage, 1000);
-//
-//                                Bitmap bitmap = ImageProcessing.convertMatrixToBitmap(obtainedImage);
-//                                updateImageView(bitmap);
+                                new Thread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        try {
+                                            Mat data = new Mat();
+                                            modelTraining.getEigenVectors().copyTo(data);
+                                            data.push_back(modelTraining.getMean());
+
+                                            DataManagement.exportData("test", data);
+                                        } catch (Exception e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                }).start();
+
+                                Mat obtainedImage = modelTraining.getMean();
+                                obtainedImage = ImageProcessing.reshapeFace(obtainedImage);
+                                Core.normalize(obtainedImage, obtainedImage, 0, 255, Core.NORM_MINMAX, CvType.CV_8U);
+                                obtainedImage = ImageProcessing.scaleImage(obtainedImage, 1000);
+
+                                Bitmap bitmap = ImageProcessing.convertMatrixToBitmap(obtainedImage);
+                                updateImageView(bitmap);
                             } catch (Exception e) {
                                 e.printStackTrace();
                                 showToast(e.getMessage());
@@ -122,19 +122,15 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 showToast("Test");
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-
-                            if (modelTraining != null){
-                                modelTraining.test();
-                            }
-                        } catch (Exception e){
-                            e.printStackTrace();
-                        }
-                    }
-                }).start();
+//                new Thread(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        try {
+//                        } catch (Exception e){
+//                            e.printStackTrace();
+//                        }
+//                    }
+//                }).start();
             }
         });
 
@@ -147,7 +143,7 @@ public class MainActivity extends Activity {
         modelTraining = new ModelTraining();
 
 
-//        loadSavedMeanImage();
+        loadSavedMeanImage();
     }
 
     @Override
@@ -367,21 +363,26 @@ public class MainActivity extends Activity {
     }
 
     private void loadSavedMeanImage(){
-        try {
-            Mat data = DataManagement.deserializeData("test");
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Mat data = DataManagement.deserializeData("test");
 
-            Mat obtainedImage = data.row(data.rows() - 1);
-            obtainedImage = ImageProcessing.reshapeFace(obtainedImage);
+                    Mat obtainedImage = data.row(data.rows() - 1);
+                    obtainedImage = ImageProcessing.reshapeFace(obtainedImage);
 
-            Core.normalize(obtainedImage, obtainedImage, 0, 255, Core.NORM_MINMAX, CvType.CV_8U);
-            obtainedImage = ImageProcessing.scaleImage(obtainedImage, 1000);
+                    Core.normalize(obtainedImage, obtainedImage, 0, 255, Core.NORM_MINMAX, CvType.CV_8U);
+                    obtainedImage = ImageProcessing.scaleImage(obtainedImage, 1000);
 
-            Bitmap bitmap = ImageProcessing.convertMatrixToBitmap(obtainedImage);
-            updateImageView(bitmap);
+                    Bitmap bitmap = ImageProcessing.convertMatrixToBitmap(obtainedImage);
+                    updateImageView(bitmap);
 
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
     }
 }
